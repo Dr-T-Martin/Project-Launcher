@@ -1,0 +1,16 @@
+# Your own data and runtime files
+launcher-data.json
+launcher-data.tmp
+launcher-data.broken-*.json
+launcher-logs/
+.launcher-session.json
+
+# Python
+__pycache__/
+*.pyc
+
+# Editors and OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

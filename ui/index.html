@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project launcher</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gruppo&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <h1>Project launcher</h1>
+    <p>Start, group and stop your project scripts.</p>
+  </div>
+  <div class="tools">
+    <label class="search"><span class="sr">Search entries</span><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="search" type="search" placeholder="Search entries" autocomplete="off"></label>
+    <span id="runningTag"></span>
+    <button class="pp-btn pp-btn-secondary" id="newGroupBtn">New group</button>
+    <button class="pp-btn pp-btn-primary" id="newEntryBtn">New entry</button>
+    <button class="icon-btn" id="themeBtn" aria-label="Switch between light and dark" title="Switch between light and dark"></button>
+    <button class="icon-btn" id="quitBtn" aria-label="Quit the launcher" title="Quit the launcher"></button>
+  </div>
+</header>
+<main id="board" aria-live="polite"></main>
+<p class="foot-note">Closing this window keeps your scripts running. Open the launcher again to come back to them, or use the power button to quit.</p>
+
+<div id="menu" class="menu pp-float" role="menu" hidden></div>
+<div id="toasts" class="toasts" role="status"></div>
+
+<aside id="log" class="log pp-float" hidden aria-label="Output">
+  <div class="log-head">
+    <h3 id="logTitle">Output</h3>
+    <button class="pp-btn pp-btn-danger sm" id="logStop"></button>
+    <button class="icon-btn" id="logClose" aria-label="Close output"></button>
+  </div>
+  <div class="log-tabs" id="logTabs"></div>
+  <pre id="logText" tabindex="0"></pre>
+</aside>
+
+<dialog id="entryDlg" class="pp-float" aria-labelledby="entryTitle">
+  <form method="dialog" class="dlg" id="entryForm" novalidate>
+    <div class="dlg-head"><h2 id="entryTitle">New entry</h2><button type="button" class="icon-btn" data-close aria-label="Close"></button></div>
+    <div class="dlg-body">
+      <div class="pp-field" id="fName"><label for="eName">Name</label><input class="pp-input" id="eName" autocomplete="off" placeholder="[Project name]"><p class="pp-error" hidden></p></div>
+      <div class="pp-field" id="fPath">
+        <label for="ePath">Location</label>
+        <div class="row"><input class="pp-input mono" id="ePath" autocomplete="off" placeholder="C:\Users\you\Projects\my-app" spellcheck="false">
+          <button type="button" class="pp-btn pp-btn-secondary" id="browseFolder">Folder</button>
+          <button type="button" class="pp-btn pp-btn-secondary" id="browseFile">File</button></div>
+        <p class="pp-help">A project folder, a package.json or a single script.</p>
+        <p class="pp-error" hidden></p>
+      </div>
+      <div class="pp-field" id="fCmds">
+        <div class="row" style="justify-content:space-between"><span class="flabel">Scripts in this entry</span><span id="selAll" hidden><button type="button" class="link" data-sel="all">Select all</button> · <button type="button" class="link" data-sel="none">None</button></span></div>
+        <div id="cmdList"></div>
+        <p class="pp-help">Each ticked script gets its own Start and Stop button on the card.</p>
+        <p class="pp-help" id="pyInfo" hidden></p>
+        <p class="pp-error" hidden></p>
+      </div>
+      <fieldset class="pp-field">
+        <legend>How to start</legend>
+        <div class="seg">
+          <label><input type="radio" name="mode" value="hidden"><span class="t">Hidden</span><span class="d">Runs in the background. Output shows in this app.</span></label>
+          <label><input type="radio" name="mode" value="terminal"><span class="t">In a terminal</span><span class="d">Opens a terminal window you can watch and type in.</span></label>
+        </div>
+        <label class="inline-check" id="keepWrap"><input type="checkbox" id="eKeep"> Keep the terminal open after the script stops</label>
+      </fieldset>
+      <div class="pp-field"><label for="eGroup">Group</label><select id="eGroup"></select></div>
+      <div class="pp-field"><span class="flabel">Icon</span><div class="icons" id="iconGrid"></div></div>
+      <div class="pp-field"><span class="flabel">Colour</span><div class="swatches" id="swatches"></div></div>
+      <div class="preview" aria-hidden="true"><div class="tile" id="pvTile"></div><div><b id="pvName">[Project name]</b><div class="pp-help" id="pvSub"></div></div></div>
+      <details class="adv">
+        <summary><svg class="ic" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>More options</summary>
+        <div class="adv-body">
+          <div class="pp-field"><label for="eArgs">Arguments</label><input class="pp-input mono" id="eArgs" autocomplete="off" spellcheck="false" placeholder="--port 3000"><p class="pp-help">Added to the end of every command in this entry.</p></div>
+          <div class="pp-field" id="fPy"><label for="ePy">Python to use</label><input class="pp-input mono" id="ePy" autocomplete="off" spellcheck="false"><p class="pp-help" id="ePyHelp">Leave empty to use the project's .venv when there is one.</p></div>
+          <div class="two">
+            <div class="pp-field"><label for="eUrl">Open a web address after starting</label><input class="pp-input mono" id="eUrl" autocomplete="off" spellcheck="false" placeholder="http://localhost:5173"></div>
+            <div class="pp-field"><label for="eDelay">Wait before opening (seconds)</label><input class="pp-input" id="eDelay" type="number" min="0" max="120" step="0.5"></div>
+          </div>
+        </div>
+      </details>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="pp-btn pp-btn-danger" id="entryDelete">Delete</button>
+      <span class="spacer"></span>
+      <button type="button" class="pp-btn pp-btn-secondary" data-close>Cancel</button>
+      <button type="submit" class="pp-btn pp-btn-primary" id="entrySave">Save entry</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="groupDlg" class="pp-float" aria-labelledby="groupTitle">
+  <form method="dialog" class="dlg" id="groupForm" novalidate>
+    <div class="dlg-head"><h2 id="groupTitle">New group</h2><button type="button" class="icon-btn" data-close aria-label="Close"></button></div>
+    <div class="dlg-body">
+      <div class="pp-field" id="fGName"><label for="gName">Name</label><input class="pp-input" id="gName" autocomplete="off" placeholder="[Group name]"><p class="pp-error" hidden></p></div>
+      <div class="pp-field"><label for="gDelay">Wait between starts (seconds)</label><input class="pp-input" id="gDelay" type="number" min="0" max="120" step="0.5"><p class="pp-help">Used by Start all, for example to let a backend come up before its frontend.</p></div>
+    </div>
+    <div class="dlg-foot"><span class="spacer"></span><button type="button" class="pp-btn pp-btn-secondary" data-close>Cancel</button><button type="submit" class="pp-btn pp-btn-primary">Save group</button></div>
+  </form>
+</dialog>
+
+<dialog id="confirmDlg" class="pp-float" aria-labelledby="cTitle">
+  <form method="dialog" class="dlg">
+    <div class="dlg-head"><h2 id="cTitle"></h2></div>
+    <div class="dlg-body"><p id="cText" style="margin:0"></p><label class="inline-check" id="cCheckWrap" hidden><input type="checkbox" id="cCheck"><span id="cCheckText"></span></label></div>
+    <div class="dlg-foot"><span class="spacer"></span><button value="no" class="pp-btn pp-btn-secondary">Cancel</button><button value="yes" class="pp-btn" id="cOk"></button></div>
+  </form>
+</dialog>
+
+<div class="offline" id="offline" hidden><div><h2>The launcher has stopped</h2><p>Start it again to come back. You can close this window.</p></div></div>
+
+<script>window.LAUNCHER_TOKEN = "__TOKEN__";</script>
+<script src="app.js"></script>
+</body>
+</html>
